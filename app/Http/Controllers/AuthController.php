@@ -11,8 +11,7 @@ class AuthController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse Returns a token or 401
      */
-    public function login(Request $request)
-    {
+    public function login(Request $request): \Illuminate\Http\JsonResponse {
         $data = [
             'email' => $request->email,
             'password' => $request->password

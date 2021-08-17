@@ -40,8 +40,7 @@ class SendTodoNotifications extends Command
      *
      * @return int
      */
-    public function handle()
-    {
+    public function handle(): int {
         $notifications = TodoNotification::all()->where('reminder_datetime','<=', Carbon::now()->toDateTimeString())
             ->where('sent','=',false);
 

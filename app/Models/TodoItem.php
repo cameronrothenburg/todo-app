@@ -29,7 +29,7 @@ class TodoItem extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function todoAttachments() {
+    public function todoAttachments(): \Illuminate\Database\Eloquent\Relations\HasMany {
         return $this->hasMany(TodoAttachment::class);
     }
 
@@ -38,11 +38,15 @@ class TodoItem extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function todoNotifications() {
+    public function todoNotifications(): \Illuminate\Database\Eloquent\Relations\HasMany {
         return $this->hasMany(TodoNotification::class);
     }
 
-    public function user() {
+    /**
+     * Function to get the user of the todoitem
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo {
         return $this->belongsTo(User::class);
     }
 }

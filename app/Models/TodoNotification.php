@@ -18,7 +18,11 @@ class TodoNotification extends Model
         'sent' => false
     ];
 
-    public function todoItem() {
+    /**
+     * Function to return the related todoitem
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function todoItem(): \Illuminate\Database\Eloquent\Relations\BelongsTo {
         return $this->belongsTo(TodoItem::class);
     }
 }

@@ -20,8 +20,7 @@ class TodoNotificationFactory extends Factory
      *
      * @return array
      */
-    public function definition()
-    {
+    public function definition(): array {
         return [
             'reminder_datetime' => Carbon::now()->addDays($this->faker->numberBetween(0,29)),
         ];

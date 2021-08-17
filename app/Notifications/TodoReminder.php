@@ -41,8 +41,7 @@ class TodoReminder extends Notification implements ShouldQueue
      * @param  mixed  $notifiable
      * @return array
      */
-    public function via($notifiable)
-    {
+    public function via($notifiable): array {
         return ['mail'];
     }
 
@@ -52,8 +51,7 @@ class TodoReminder extends Notification implements ShouldQueue
      * @param  mixed  $notifiable
      * @return \Illuminate\Notifications\Messages\MailMessage
      */
-    public function toMail($notifiable)
-    {
+    public function toMail($notifiable): MailMessage {
 
         $dateDiff = Carbon::parse($this->todoNotification->reminder_datetime)->diffForHumans
         ($this->todoItem->due_datetime, CarbonInterface::DIFF_ABSOLUTE);
@@ -71,8 +69,7 @@ class TodoReminder extends Notification implements ShouldQueue
      * @param  mixed  $notifiable
      * @return array
      */
-    public function toArray($notifiable)
-    {
+    public function toArray($notifiable): array {
         return [
             //
         ];

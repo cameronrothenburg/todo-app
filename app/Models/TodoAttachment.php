@@ -30,6 +30,9 @@ class TodoAttachment extends Model {
         'file_type' => 'attachment',
     ];
 
+    /**
+     * @var string[] The accepted attachment MimeTypes
+     */
     private $acceptedMimeTypes = [
         'png',
         'jpeg',
@@ -39,26 +42,31 @@ class TodoAttachment extends Model {
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function todoItem() {
+    public function todoItem(): \Illuminate\Database\Eloquent\Relations\BelongsTo {
         return $this->belongsTo(TodoItem::class);
     }
 
-    /** Returns the filename
+    /** Helper function to create filename
      * @return string filename
      */
-    public function fileName() {
+    public function fileName(): string {
         return "{$this->id}.{$this->file_type}";
     }
 
+    /**
+     * Helper function to return the URI of an attachment
+     * @return string uri
+     */
     public function uri(): string {
         return "{$this->todo_item_id}/{$this->fileName()}";
     }
 
     /**
+     * Function to return the URL of the attachment if it exists
      * @return string|null
      * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
-    public function getUrl() {
+    public function getUrl(): ?string {
 
         if (Storage::disk($this->storage_type)->exists($this->uri())) {
             return Storage::disk($this->storage_type)->url($this->uri());
@@ -96,7 +104,12 @@ class TodoAttachment extends Model {
         return true;
     }
 
-    public function remove() {
+    /**
+     * Function to remove model from database and file from storage
+     * @return void
+     */
+
+    public function remove(): void {
 
         Storage::delete($this->uri());
         $this->delete();

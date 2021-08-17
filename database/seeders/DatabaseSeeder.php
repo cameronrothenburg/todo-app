@@ -14,8 +14,7 @@ class DatabaseSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
-    {
+    public function run(): void {
         User::factory(1)->state(["email" => "user@example.com"])
             ->has(TodoItem::factory(100)
                 ->has(TodoNotification::factory(5))

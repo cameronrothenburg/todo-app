@@ -5,17 +5,29 @@ namespace App\Http\Controllers;
 use App\Models\TodoAttachment;
 use App\Models\TodoItem;
 use App\Models\TodoNotification;
-use App\Notifications\TodoReminder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class TodoItemController extends Controller {
+
+    /**
+     * @var string[] Validation rules for model attributes.
+     */
+    private $validation = [
+        'title' => 'string|nullable',
+        'body' => 'string|nullable',
+        'completed' => 'boolean|nullable',
+        'due_datetime' => 'date_equals:date|nullable',
+        'attachments' => 'array|nullable',
+        'notifications' => 'array|nullable',
+        'notifications.*' => 'date|before:due_datetime|nullable',
+    ];
+
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index() {
+    public function index(): \Illuminate\Http\JsonResponse {
         $todoItems = auth()->user()->todoItems()->select([
             'id', 'title', 'completed'
         ])->orderByDesc('due_datetime')->get();
@@ -34,18 +46,9 @@ class TodoItemController extends Controller {
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request) {
+    public function store(Request $request): \Illuminate\Http\JsonResponse {
 
-        $request->validate([
-            'title' => 'required|string',
-            'body' => 'required|string',
-            'completed' => 'boolean|nullable',
-            'due_datetime' => 'date|nullable',
-            'attachments' => 'array|nullable',
-            'attachments.*' => 'string|nullable',
-            'notifications' => 'array|nullable',
-            'notifications.*' => 'date|before:due_datetime|nullable',
-        ]);
+        $request->validate($this->validation);
 
         $todoItem = new TodoItem($request->all());
         $saved = auth()->user()->todoItems()->save($todoItem);
@@ -83,7 +86,7 @@ class TodoItemController extends Controller {
      * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function show(string $id) {
+    public function show(string $id): \Illuminate\Http\JsonResponse {
         $todoItem = auth()->user()->todoItems()->select([
             'id', 'title', 'body', 'completed', 'due_datetime'
         ])->find($id);
@@ -112,17 +115,9 @@ class TodoItemController extends Controller {
      * @param String $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, string $id) {
+    public function update(Request $request, string $id): \Illuminate\Http\JsonResponse {
 
-        $request->validate([
-            'title' => 'string|nullable',
-            'body' => 'string|nullable',
-            'completed' => 'boolean|nullable',
-            'due_datetime' => 'date_equals:date|nullable',
-            'attachments' => 'array|nullable',
-            'notifications' => 'array|nullable',
-            'notifications.*' => 'date|before:due_datetime|nullable',
-        ]);
+        $request->validate($this->validation);
 
         $todoItem = auth()->user()->todoItems()->find($id);
 
@@ -188,7 +183,7 @@ class TodoItemController extends Controller {
      * @param String $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(string $id) {
+    public function destroy(string $id): \Illuminate\Http\JsonResponse {
         $todoItem = auth()->user()->todoItems()->find($id);
 
         if (!$todoItem) {
@@ -245,7 +240,7 @@ class TodoItemController extends Controller {
 
     /**
      * Helper funtion to get TodoNotifications
-     * @param $id
+     * @param $todo_item_id
      * @return TodoNotification[]|\Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
      */
     private function getNotifications($todo_item_id){
