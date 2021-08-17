@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\TodoItem;
+use App\Models\TodoNotification;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
@@ -15,13 +16,23 @@ class TodoReminder extends Notification implements ShouldQueue
     use Queueable;
 
     /**
+     * @var TodoNotification
+     */
+    private $todoNotification;
+    /**
+     * @var TodoItem
+     */
+    private $todoItem;
+
+    /**
      * Create a new notification instance.
      *
-     * @param $todoItemId ID of the todoItem
+     * @param $todoItem TodoItem The todoItem
      */
-    public function __construct($todoItemId)
+    public function __construct(TodoItem $todoItem, TodoNotification $todoNotification)
     {
-        $this->todoId = $todoItemId;
+        $this->todoItem = $todoItem;
+        $this->todoNotification = $todoNotification;
     }
 
     /**
@@ -43,13 +54,14 @@ class TodoReminder extends Notification implements ShouldQueue
      */
     public function toMail($notifiable)
     {
-        $todoItem = TodoItem::all()->where('id', $this->todoId)->first();
-        $dateDiff = Carbon::parse($todoItem->due_datetime)->diffForHumans(Carbon::now());
+
+        $dateDiff = Carbon::parse($this->todoNotification->reminder_datetime)->diffForHumans
+        ($this->todoItem->due_datetime, CarbonInterface::DIFF_ABSOLUTE);
 
         return (new MailMessage)
                     ->subject('Your Todo Reminder!')
                     ->greeting('Hello!')
-                    ->line("Your todo titled '{$todoItem->title}' is due in ${$dateDiff}")
+                    ->line("Your todo titled '{$this->todoItem->title}' is due in {$dateDiff}")
                     ->line('Thank you!');
     }
 

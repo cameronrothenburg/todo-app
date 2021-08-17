@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\TodoNotification;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TodoNotificationFactory extends Factory
@@ -22,7 +23,7 @@ class TodoNotificationFactory extends Factory
     public function definition()
     {
         return [
-            'reminder_datetime' => $this->faker->dateTime(),
+            'reminder_datetime' => Carbon::now()->addDays($this->faker->numberBetween(0,29)),
         ];
     }
 }

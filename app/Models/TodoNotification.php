@@ -9,6 +9,11 @@ class TodoNotification extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'todo_item_id',
+        'reminder_datetime'
+    ];
+
     protected $attributes = [
         'sent' => false
     ];

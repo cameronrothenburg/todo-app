@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\TodoAttachment;
 use App\Models\TodoItem;
+use App\Models\TodoNotification;
+use App\Notifications\TodoReminder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -38,9 +40,11 @@ class TodoItemController extends Controller {
             'title' => 'required|string',
             'body' => 'required|string',
             'completed' => 'boolean|nullable',
-            'due_datetime' => 'date_equals:date|nullable',
+            'due_datetime' => 'date|nullable',
             'attachments' => 'array|nullable',
-            'attachments.*' => 'string'
+            'attachments.*' => 'string|nullable',
+            'notifications' => 'array|nullable',
+            'notifications.*' => 'date|before:due_datetime|nullable',
         ]);
 
         $todoItem = new TodoItem($request->all());
@@ -50,12 +54,16 @@ class TodoItemController extends Controller {
             $this->createAttachments($request->attachments, $todoItem->id);
         }
 
+        if($request->has('notifications')) {
+            $this->createNotifications($request->notifications, $todoItem->id);
+        }
         if ($saved) {
             $response = response()->json([
                 'success' => true,
                 'data' => [
                     "content" => $todoItem,
-                    "attachments" => $this->getAttachments($todoItem->id)
+                    "attachments" => $this->getAttachments($todoItem->id),
+                    "notifications" => $this->getNotifications($todoItem->id),
 
             ]
             ]);
@@ -87,13 +95,12 @@ class TodoItemController extends Controller {
             ], 404);
         }
 
-        $todoAttachments = $this->getAttachments($id);
-
         return response()->json([
             'success' => true,
             'data' => [
                 "content" => $todoItem,
-                "attachments" => $todoAttachments
+                "attachments" => $this->getAttachments($id),
+                "notifications" => $this->getNotifications($id),
             ],
         ]);
     }
@@ -113,6 +120,8 @@ class TodoItemController extends Controller {
             'completed' => 'boolean|nullable',
             'due_datetime' => 'date_equals:date|nullable',
             'attachments' => 'array|nullable',
+            'notifications' => 'array|nullable',
+            'notifications.*' => 'date|before:due_datetime|nullable',
         ]);
 
         $todoItem = auth()->user()->todoItems()->find($id);
@@ -143,6 +152,15 @@ class TodoItemController extends Controller {
                 $todoAttachment = TodoAttachment::all()->where('id', $deleteId)->first();
                 if (!is_null($todoAttachment)) {
                     $todoAttachment->remove();
+                }
+            }
+        }
+
+        if ($request->deleteNotification) {
+            foreach ($request->deleteNotification as $deleteId) {
+                $todoNotification = TodoNotification::all()->where('id', $deleteId)->first();
+                if (!is_null($todoNotification)) {
+                    $todoNotification->delete();
                 }
             }
         }
@@ -222,6 +240,37 @@ class TodoItemController extends Controller {
                 'todo_item_id' => $todo_item_id,
             ]);
             $todoAttachment->store($attachment);
+        }
+    }
+
+    /**
+     * Helper funtion to get TodoNotifications
+     * @param $id
+     * @return TodoNotification[]|\Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
+     */
+    private function getNotifications($todo_item_id){
+        $query = TodoNotification::all()->where('todo_item_id', $todo_item_id)->where('sent','=',false);
+        return $query->map(function (TodoNotification $notification) {
+            return [
+                'id' => $notification->id,
+                'datetime' => $notification->reminder_datetime
+
+            ];
+        });
+    }
+
+    /**
+     * Helper function to create TodoNotifications
+     * @param $todoNotifications
+     * @param $todo_item_id
+     * @return void
+     */
+    private function createNotifications($todoNotifications, $todo_item_id): void {
+        foreach ($todoNotifications as $notification) {
+            TodoNotification::create([
+                'todo_item_id' => $todo_item_id,
+                'reminder_datetime' => $notification
+            ]);
         }
     }
 }

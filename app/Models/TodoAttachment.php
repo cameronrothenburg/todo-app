@@ -92,7 +92,7 @@ class TodoAttachment extends Model {
             $this->delete();
             return false;
         }
-        Storage::disk($this->storage_type)->store($this->todo_item_id, $file, $this->fileName());
+        Storage::disk($this->storage_type)->putFileAs($this->todo_item_id, $file, $this->fileName());
         return true;
     }
 

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\TodoItem;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TodoItemFactory extends Factory
@@ -24,7 +25,7 @@ class TodoItemFactory extends Factory
         return [
             'title' => $this->faker->sentence(),
             'body' => $this->faker->paragraph(),
-            'due_datetime' => $this->faker->dateTime(),
+            'due_datetime' => Carbon::now()->addDays($this->faker->numberBetween(30,100)),
             'completed' => $this->faker->boolean(),
         ];
     }

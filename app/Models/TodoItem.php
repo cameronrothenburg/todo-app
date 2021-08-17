@@ -32,4 +32,17 @@ class TodoItem extends Model
     public function todoAttachments() {
         return $this->hasMany(TodoAttachment::class);
     }
+
+    /**
+     * Gets the todoNotifications for the todoItem
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function todoNotifications() {
+        return $this->hasMany(TodoNotification::class);
+    }
+
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
 }
