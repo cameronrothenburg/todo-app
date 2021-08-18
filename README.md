@@ -69,11 +69,6 @@ These instructions assume you already have the repo cloned.
 If you don't want to run this command by command run the first two commands, then run `` sail php artisan migrate && sail php artisan db:seed && sail php artisan passport:install && sail php artisian storage:link && sail php artisan l5-swagger:generate && sail php artisan schedule:work ``
 This will run the commands one after another. Bear in mind the last command will stay open as its the scheduler.
 
-
-### Creating A Pull Request
-
-
-
 ## License
 
 Distributed under the MIT License. See [LICENSE](https://github.com/rotho98/todo-app/blob/main/LICENSE.md) for more information.
