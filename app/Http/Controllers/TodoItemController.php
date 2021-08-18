@@ -32,6 +32,13 @@ class TodoItemController extends Controller {
      *        security={
      *              {"passport": {}},
      *   },
+     *     @OA\Parameter(
+     *          description="Completed",
+     *          in="query",
+     *          name="completed",
+     *          required=false,
+     *          @OA\Schema(type="boolean")
+     *      ),
      *     @OA\Response(
      *       response=200,
      *       description="Success",
@@ -65,10 +72,16 @@ class TodoItemController extends Controller {
     /**
      * Display a listing of the resource.
      *
+     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index(): \Illuminate\Http\JsonResponse {
+    public function index(Request $request): \Illuminate\Http\JsonResponse {
         $todoItems = auth()->user()->todoItems()->orderByDesc('due_datetime')->get();
+
+        if ($request->has('completed')){
+
+           $todoItems = $todoItems->where('completed', $request->boolean('completed') );
+        }
 
         return response()->json([
             'success' => true,

@@ -61,6 +61,17 @@
                 "summary": "Get list of TodoItems",
                 "description": "Returns list of TodoItems",
                 "operationId": "getTodoItemsList",
+                "parameters": [
+                    {
+                        "name": "completed",
+                        "in": "query",
+                        "description": "Completed",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Success",
