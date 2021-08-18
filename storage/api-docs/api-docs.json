@@ -1,0 +1,727 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "TODO Application",
+        "description": "Simple todo application with laravel",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Login"
+                ],
+                "summary": "Login",
+                "operationId": "login",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "not found"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                }
+            }
+        },
+        "/api/v1/todoitems": {
+            "get": {
+                "tags": [
+                    "TodoItems"
+                ],
+                "summary": "Get list of TodoItems",
+                "description": "Returns list of TodoItems",
+                "operationId": "getTodoItemsList",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "readOnly": true,
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "content": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/TodoItem"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "not found"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "passport": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "TodoItems"
+                ],
+                "summary": "Create TodoItem",
+                "description": "Create TodoItem",
+                "operationId": "createTodoItem",
+                "parameters": [
+                    {
+                        "name": "title",
+                        "in": "query",
+                        "description": "Title",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "body",
+                        "in": "query",
+                        "description": "Body",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "due_datetime",
+                        "in": "query",
+                        "description": "Time and Date due",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "2021-11-26 09:47:59"
+                    },
+                    {
+                        "name": "attachments[]",
+                        "in": "query",
+                        "description": "Base64 encoded attachments",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    {
+                        "name": "notifications[]",
+                        "in": "query",
+                        "description": "Notification date and time",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "example": "2021-11-26 09:47:59"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "readOnly": true,
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "content": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/TodoItem"
+                                                    }
+                                                },
+                                                "attachments": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/TodoAttachment"
+                                                    }
+                                                },
+                                                "notifications": {
+                                                    "properties": {
+                                                        "": {
+                                                            "$ref": "#/components/schemas/TodoNotification"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "not found"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "passport": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/todoitems/{id}": {
+            "get": {
+                "tags": [
+                    "TodoItems"
+                ],
+                "summary": "Get detail of TodoItem",
+                "description": "Returns detail of TodoItem",
+                "operationId": "getTodoItemDetail",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of TodoItem",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "7fed716f-4653-4e11-873d-f341aa8d911d"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "readOnly": true,
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "content": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/TodoItem"
+                                                    }
+                                                },
+                                                "attachments": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/TodoAttachment"
+                                                    }
+                                                },
+                                                "notifications": {
+                                                    "properties": {
+                                                        "": {
+                                                            "$ref": "#/components/schemas/TodoNotification"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "readOnly": true,
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "readOnly": true,
+                                            "example": "Item could not be found!"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "passport": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "TodoItems"
+                ],
+                "summary": "Delete TodoItem",
+                "description": "Delete TodoItem",
+                "operationId": "removeTodoItem",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of TodoItem",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "7fed716f-4653-4e11-873d-f341aa8d911d"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "readOnly": true,
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "readOnly": true,
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "readOnly": true,
+                                            "example": "Item could not be found!"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "readOnly": true,
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "readOnly": true,
+                                            "example": "Item could not be deleted!"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "passport": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "TodoItems"
+                ],
+                "summary": "Update TodoItem",
+                "description": "Update TodoItem",
+                "operationId": "updateTodoItem",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of TodoItem",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "7fed716f-4653-4e11-873d-f341aa8d911d"
+                    },
+                    {
+                        "name": "title",
+                        "in": "query",
+                        "description": "Title",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "body",
+                        "in": "query",
+                        "description": "Body",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "due_datetime",
+                        "in": "query",
+                        "description": "Time and Date due",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "2021-11-26 09:47:59"
+                    },
+                    {
+                        "name": "attachments[]",
+                        "in": "query",
+                        "description": "Base64 encoded attachments",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    {
+                        "name": "notifications[]",
+                        "in": "query",
+                        "description": "Notification date and time",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "example": "2021-11-26 09:47:59"
+                            }
+                        }
+                    },
+                    {
+                        "name": "deleteNotifications[]",
+                        "in": "query",
+                        "description": "ID of Notifications to delete",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "example": "7fed716f-4653-4e11-873d-f341aa8d911d"
+                            }
+                        }
+                    },
+                    {
+                        "name": "deleteAttachments[]",
+                        "in": "query",
+                        "description": "ID of attachments to delete",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "example": "7fed716f-4653-4e11-873d-f341aa8d911d"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "readOnly": true,
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "content": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/TodoItem"
+                                                    }
+                                                },
+                                                "attachments": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/TodoAttachment"
+                                                    }
+                                                },
+                                                "notifications": {
+                                                    "properties": {
+                                                        "": {
+                                                            "$ref": "#/components/schemas/TodoNotification"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "readOnly": true,
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "readOnly": true,
+                                            "example": "Item is not available!"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "readOnly": true,
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "readOnly": true,
+                                            "example": "Item could not be updated!"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "passport": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "TodoAttachment": {
+                "properties": {
+                    "todo_item_id": {
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "7fed716f-4653-4e11-873d-f341aa8d911d"
+                    },
+                    "url": {
+                        "type": "string|null",
+                        "readOnly": true,
+                        "example": ""
+                    }
+                },
+                "type": "object",
+                "xml": {
+                    "name": "TodoAttachment"
+                }
+            },
+            "TodoItem": {
+                "required": [
+                    "title",
+                    "body"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "7fed716f-4653-4e11-873d-f341aa8d911d"
+                    },
+                    "title": {
+                        "type": "string",
+                        "readOnly": false,
+                        "example": "Assumenda fuga recusandae voluptatumimpedit."
+                    },
+                    "body": {
+                        "type": "string",
+                        "readOnly": false,
+                        "example": "Assumenda fuga recusandae"
+                    },
+                    "completed": {
+                        "type": "boolean",
+                        "readOnly": false,
+                        "example": 0
+                    },
+                    "due_datetime": {
+                        "type": "string",
+                        "readOnly": false,
+                        "example": "2021-11-26 09:47:59"
+                    }
+                },
+                "type": "object",
+                "xml": {
+                    "name": "TodoItem"
+                }
+            },
+            "TodoNotification": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "42189b19-5155-48a8-a81a-9433c9412b5d"
+                    },
+                    "datetime": {
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "2021-09-15 09:47:59"
+                    }
+                },
+                "type": "object",
+                "xml": {
+                    "name": "TodoNotification"
+                }
+            }
+        },
+        "securitySchemes": {
+            "passport": {
+                "type": "apiKey",
+                "description": "Laravel passport oauth2 security.",
+                "in": "header",
+                "scheme": "http",
+                "name": "Authorization"
+            }
+        }
+    },
+    "security": [
+        []
+    ]
+}

@@ -10,6 +10,13 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\File\File;
 
+/**
+ *  @OA\Schema(
+ *      @OA\Xml(name="TodoAttachment"),
+ *          @OA\Property(property="todo_item_id", type="string",readOnly=true,example="7fed716f-4653-4e11-873d-f341aa8d911d"),
+ *          @OA\Property(property="url", type="string|null",readOnly=true,example=""),
+ * )
+ */
 class TodoAttachment extends Model {
     use HasFactory, Uuid;
 
