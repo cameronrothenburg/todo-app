@@ -13,7 +13,7 @@ class TodoItemController extends Controller {
      * @var string[] Validation rules for model attributes.
      */
     private $validation = [
-        'title' => 'string|nullable',
+        'title' => 'string|nullable|max:100',
         'body' => 'string|nullable',
         'completed' => 'boolean|nullable',
         'due_datetime' => 'date|nullable',
@@ -78,9 +78,9 @@ class TodoItemController extends Controller {
     public function index(Request $request): \Illuminate\Http\JsonResponse {
         $todoItems = auth()->user()->todoItems()->orderByDesc('due_datetime')->get();
 
-        if ($request->has('completed')){
+        if ($request->has('completed')) {
 
-           $todoItems = $todoItems->where('completed', $request->boolean('completed') );
+            $todoItems = $todoItems->where('completed', $request->boolean('completed'));
         }
 
         return response()->json([
@@ -189,7 +189,8 @@ class TodoItemController extends Controller {
         $saved = auth()->user()->todoItems()->save($todoItem);
 
         if ($request->has('attachments')) {
-            $this->createAttachments($request->attachments, $todoItem->id);
+            $savedAttachments = $this->createAttachments($request->attachments, $todoItem->id);
+            $saved = $saved && $savedAttachments;
         }
 
         if ($request->has('notifications')) {
@@ -445,6 +446,11 @@ class TodoItemController extends Controller {
             "completed" => $request->completed ?? $todoItem->completed,
         ])->save();
 
+        if ($request->has('attachments')) {
+            $updatedAttachments = $this->createAttachments($request->attachments, $todoItem->id);
+            $updatedItem = $updatedItem && $updatedAttachments;
+        }
+
         if (!$updatedItem) {
             return response()->json([
                 'success' => false,
@@ -452,20 +458,16 @@ class TodoItemController extends Controller {
             ], 500);
         }
 
-        if ($request->has('attachments')) {
-            $this->createAttachments($request->attachments, $todoItem->id);
-        }
-
         if ($request->has('notifications')) {
             $this->createNotifications($request->notifications, $todoItem->id);
         }
 
         if ($request->deleteAttachments) {
-           $this->deleteAttachments($request->deleteAttachments);
+            $this->deleteAttachments($request->deleteAttachments);
         }
 
         if ($request->deleteNotifications) {
-           $this->deleteNotifications($request->deleteNotifications);
+            $this->deleteNotifications($request->deleteNotifications);
         }
 
         return response()->json([
@@ -582,16 +584,20 @@ class TodoItemController extends Controller {
      * Helper function to create TodoAttachments
      * @param $todoAttachments
      * @param $todo_item_id
-     * @return void
+     * @return bool
      */
-    private function createAttachments($todoAttachments, $todo_item_id): void {
+    private function createAttachments($todoAttachments, $todo_item_id): bool {
         foreach ($todoAttachments as $attachment) {
 
             $todoAttachment = TodoAttachment::create([
                 'todo_item_id' => $todo_item_id,
             ]);
-            $todoAttachment->store($attachment);
+            if (!$todoAttachment->store($attachment)) {
+                return false;
+            }
         }
+
+        return true;
     }
 
     /**
