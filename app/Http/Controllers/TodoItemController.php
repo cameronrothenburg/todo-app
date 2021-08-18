@@ -199,22 +199,20 @@ class TodoItemController extends Controller {
             $this->createNotifications($request->notifications, $todoItem->id);
         }
         if ($saved) {
-            $response = response()->json([
+            return response()->json([
                 'success' => true,
                 'data' => [
                     "content" => $todoItem,
                     "attachments" => $this->getAttachments($todoItem->id),
-                    "notifications" => $this->getNotifications($todoItem->id),
+                    "notifications" => $this->getNotifications($todoItem->id)
 
                 ]
             ]);
-        } else {
-            $response = response()->json([
-                'success' => false,
-                'message' => 'Item could not be saved'
-            ], 500);
         }
-        return $response;
+        return response()->json([
+            'success' => false,
+            'message' => 'Item could not be saved'
+        ], 500);
 
     }
 
@@ -478,13 +476,13 @@ class TodoItemController extends Controller {
             $this->validateNotifications($todoItem);
             $notifications = $this->getNotifications($todoItem->id);
         }
-
+        $attachments = $this->getAttachments($todoItem->id);
         return response()->json([
             'success' => true,
             'data' => [
                 "content" => $todoItem,
-                "attachments" => $this->getAttachments($todoItem->id),
-                "notifications" => $notifications
+                "attachments" => $attachments,
+                "notifications" => $this->getNotifications($todoItem->id)
             ],
         ]);
     }
@@ -576,13 +574,15 @@ class TodoItemController extends Controller {
     /**
      * Return all relevant fields from attachments related to a TodoItem
      * @param $id
-     * @return TodoAttachment[]|\Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
+     * @return TodoAttachment[]
      */
     private function getAttachments($id) {
         $query = TodoAttachment::all()->where('todo_item_id', $id);
-        return $query->map(function (TodoAttachment $attachment) {
-            return $attachment->formattedResponse();
-        });
+        $result = [];
+        foreach ($query as $attachment){
+            $result[] = $attachment->formattedResponse();
+        }
+        return $result;
     }
 
     /**
@@ -608,13 +608,15 @@ class TodoItemController extends Controller {
     /**
      * Helper funtion to get TodoNotifications
      * @param $todo_item_id
-     * @return TodoNotification[]|\Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
+     * @return TodoNotification[]
      */
     private function getNotifications($todo_item_id) {
         $query = TodoNotification::all()->where('todo_item_id', $todo_item_id)->where('sent', false);
-        return $query->map(function (TodoNotification $notification) {
-            return $notification->formattedResponse();
-        });
+        $result = [];
+        foreach ($query as $notification){
+            $result[] = $notification->formattedResponse();
+        }
+        return $result;
     }
 
     /**

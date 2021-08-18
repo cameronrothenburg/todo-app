@@ -129,7 +129,7 @@ class TodoAttachment extends Model {
     public function formattedResponse(): array {
         return [
             'id' => $this->id,
-            'datetime' => $this->getUrl(),
+            'url' => $this->getUrl(),
         ];
     }
 }
