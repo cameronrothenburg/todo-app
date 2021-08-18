@@ -19,7 +19,7 @@ class CreateTodoItemsTable extends Migration
             $table->text('body');
             $table->dateTime('due_datetime')->nullable();
             $table->boolean('completed');
-            $table->foreignUuid('user_id')->constrained('users');
+            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }

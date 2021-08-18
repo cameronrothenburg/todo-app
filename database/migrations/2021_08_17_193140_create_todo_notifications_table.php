@@ -14,10 +14,10 @@ class CreateTodoNotificationsTable extends Migration
     public function up()
     {
         Schema::create('todo_notifications', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->boolean('sent');
             $table->dateTime('reminder_datetime');
-            $table->foreignUuid('todo_item_id')->constrained('todo_items');
+            $table->foreignUuid('todo_item_id')->constrained('todo_items')->onDelete('cascade');
             $table->timestamps();
         });
     }

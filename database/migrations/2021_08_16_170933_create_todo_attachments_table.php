@@ -17,7 +17,9 @@ class CreateTodoAttachmentsTable extends Migration
             $table->uuid('id')->primary();
             $table->string('storage_type');
             $table->string('file_type')->nullable();
-            $table->foreignUuid('todo_item_id')->constrained('todo_items');
+            $table->foreignUuid('todo_item_id')->nullable()
+                ->constrained('todo_items')->cascadeOnUpdate()
+                ->nullOnDelete();
             $table->timestamps();
 
         });
