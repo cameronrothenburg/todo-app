@@ -6,6 +6,8 @@ use App\Models\TodoAttachment;
 use App\Models\TodoItem;
 use App\Models\TodoNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class TodoItemController extends Controller {
 
@@ -470,12 +472,19 @@ class TodoItemController extends Controller {
             $this->deleteNotifications($request->deleteNotifications);
         }
 
+        $notifications = $this->getNotifications($todoItem->id);
+
+        if ($notifications) {
+            $this->validateNotifications($todoItem);
+            $notifications = $this->getNotifications($todoItem->id);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
                 "content" => $todoItem,
                 "attachments" => $this->getAttachments($todoItem->id),
-                "notifications" => $this->getNotifications($todoItem->id),
+                "notifications" => $notifications
             ],
         ]);
     }
@@ -572,11 +581,7 @@ class TodoItemController extends Controller {
     private function getAttachments($id) {
         $query = TodoAttachment::all()->where('todo_item_id', $id);
         return $query->map(function (TodoAttachment $attachment) {
-            return [
-                'id' => $attachment->id,
-                'url' => $attachment->getUrl()
-
-            ];
+            return $attachment->formattedResponse();
         });
     }
 
@@ -608,11 +613,7 @@ class TodoItemController extends Controller {
     private function getNotifications($todo_item_id) {
         $query = TodoNotification::all()->where('todo_item_id', $todo_item_id)->where('sent', false);
         return $query->map(function (TodoNotification $notification) {
-            return [
-                'id' => $notification->id,
-                'datetime' => $notification->reminder_datetime
-
-            ];
+            return $notification->formattedResponse();
         });
     }
 
@@ -633,11 +634,11 @@ class TodoItemController extends Controller {
 
     /**
      * Helper function to delete TodoNotifications
-     * @param array $todoNotifications
+     * @param array $todoNotificationIds
      * @return void
      */
-    private function deleteNotifications(array $todoNotifications): void {
-        foreach ($todoNotifications as $deleteId) {
+    private function deleteNotifications(array $todoNotificationIds): void {
+        foreach ($todoNotificationIds as $deleteId) {
             $todoNotification = TodoNotification::all()->where('id', $deleteId)->first();
             if (!is_null($todoNotification)) {
                 $todoNotification->delete();
@@ -646,15 +647,27 @@ class TodoItemController extends Controller {
     }
 
     /**
-     * Helper function to delete TodoAttachments
-     * @param array $todoAttachments
+     * Helper function to remove TodoAttachments
+     * @param array $todoAttachmentIds
      */
-    private function deleteAttachments(array $todoAttachments): void {
-        foreach ($todoAttachments as $deleteId) {
+    private function deleteAttachments(array $todoAttachmentIds): void {
+        foreach ($todoAttachmentIds as $deleteId) {
             $todoAttachment = TodoAttachment::all()->where('id', $deleteId)->first();
             if (!is_null($todoAttachment)) {
                 $todoAttachment->remove();
             }
         }
     }
+
+    /**
+     * Helper function to validate notifications
+     * @param TodoItem $todoItem
+     */
+    private function validateNotifications(TodoItem $todoItem) {
+        $notifications = TodoNotification::all()->where('todo_item_id', $todoItem->id);
+        $notifications->map(function ($notification) use ($todoItem) {
+            $notification->validateSelf($todoItem);
+        });
+    }
+
 }

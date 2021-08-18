@@ -115,11 +115,22 @@ class TodoAttachment extends Model {
      * Function to remove model from database and file from storage
      * @return void
      */
-
     public function remove(): void {
 
         Storage::delete($this->uri());
         $this->delete();
+    }
+
+    /**
+     * Return a formatted response for api
+     * @return array
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
+     */
+    public function formattedResponse(): array {
+        return [
+            'id' => $this->id,
+            'datetime' => $this->getUrl(),
+        ];
     }
 }
 
