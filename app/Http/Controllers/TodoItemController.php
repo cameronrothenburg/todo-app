@@ -461,21 +461,11 @@ class TodoItemController extends Controller {
         }
 
         if ($request->deleteAttachments) {
-            foreach ($request->deleteAttachments as $deleteId) {
-                $todoAttachment = TodoAttachment::all()->where('id', $deleteId)->first();
-                if (!is_null($todoAttachment)) {
-                    $todoAttachment->remove();
-                }
-            }
+           $this->deleteAttachments($request->deleteAttachments);
         }
 
         if ($request->deleteNotifications) {
-            foreach ($request->deleteNotifications as $deleteId) {
-                $todoNotification = TodoNotification::all()->where('id', $deleteId)->first();
-                if (!is_null($todoNotification)) {
-                    $todoNotification->delete();
-                }
-            }
+           $this->deleteNotifications($request->deleteNotifications);
         }
 
         return response()->json([
@@ -632,6 +622,33 @@ class TodoItemController extends Controller {
                 'todo_item_id' => $todo_item_id,
                 'reminder_datetime' => $notification
             ]);
+        }
+    }
+
+    /**
+     * Helper function to delete TodoNotifications
+     * @param array $todoNotifications
+     * @return void
+     */
+    private function deleteNotifications(array $todoNotifications): void {
+        foreach ($todoNotifications as $deleteId) {
+            $todoNotification = TodoNotification::all()->where('id', $deleteId)->first();
+            if (!is_null($todoNotification)) {
+                $todoNotification->delete();
+            }
+        }
+    }
+
+    /**
+     * Helper function to delete TodoAttachments
+     * @param array $todoAttachments
+     */
+    private function deleteAttachments(array $todoAttachments): void {
+        foreach ($todoAttachments as $deleteId) {
+            $todoAttachment = TodoAttachment::all()->where('id', $deleteId)->first();
+            if (!is_null($todoAttachment)) {
+                $todoAttachment->remove();
+            }
         }
     }
 }
