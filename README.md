@@ -7,7 +7,6 @@
     <br/>
     <br/>
     <a href="https://github.com/rotho98/todo-app/issues">Report Bug</a>
-    .
   </p>
 </p>
 
@@ -29,6 +28,7 @@ A simple todo application with security and scalability in mind.
 Models have UUIDs as the primary key to prevent attacks with enumeration.
 
 Uploaded files are stored in UUID folders and can be configured to only allow specific MIME Types. Once again this makes enumerating through public files a lot harder.
+Files can be saved and retrieved from any storage location, multiple storage locations are supported at any one time.
 
 The API is secured with a Bearer token to only allow registered users to interact with the application.
 
@@ -43,7 +43,7 @@ The API is secured with a Bearer token to only allow registered users to interac
 
 ## Getting Started
 
-To get a local copy up and running follow these simple example steps.
+To get a local copy up and running follow these simple steps.
 
 ### Prerequisites
 
