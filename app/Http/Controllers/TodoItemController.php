@@ -14,9 +14,9 @@ class TodoItemController extends Controller {
     /**
      * @var string[] Validation rules for model attributes.
      */
-    private $validation = [
-        'title' => 'string',
-        'body' => 'string',
+    private $validationRules = [
+        'title' => 'string|required',
+        'body' => 'string|required',
         'completed' => 'boolean|nullable',
         'due_datetime' => 'date|nullable',
         'attachments' => 'array|nullable',
@@ -115,7 +115,7 @@ class TodoItemController extends Controller {
      *          description="Body",
      *          in="query",
      *          name="body",
-     *          required=true,
+     *          required=false,
      *          @OA\Schema(type="string")
      *      ),
      *      @OA\Parameter(
@@ -187,7 +187,7 @@ class TodoItemController extends Controller {
      */
     public function store(Request $request): \Illuminate\Http\JsonResponse {
 
-        $request->validate($this->validation);
+        $request->validate($this->validationRules);
 
         $todoItem = new TodoItem($request->all());
         $saved = auth()->user()->todoItems()->save($todoItem);
@@ -331,7 +331,7 @@ class TodoItemController extends Controller {
      *          description="Body",
      *          in="query",
      *          name="body",
-     *          required=true,
+     *          required=false,
      *          @OA\Schema(type="string")
      *      ),
      *      @OA\Parameter(
@@ -429,8 +429,13 @@ class TodoItemController extends Controller {
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, string $id): \Illuminate\Http\JsonResponse {
+        $validation = [
+            "title" => 'string|nullable',
+            "body" => 'string|nullable'
+        ];
 
-        $request->validate($this->validation);
+        $validation[] = array_splice($this->validationRules, 2);
+        $request->validate($validation);
 
         $todoItem = auth()->user()->todoItems()->find($id);
 
@@ -580,7 +585,7 @@ class TodoItemController extends Controller {
     private function getAttachments($id) {
         $query = TodoAttachment::all()->where('todo_item_id', $id);
         $result = [];
-        foreach ($query as $attachment){
+        foreach ($query as $attachment) {
             $result[] = $attachment->formattedResponse();
         }
         return $result;
@@ -614,7 +619,7 @@ class TodoItemController extends Controller {
     private function getNotifications($todo_item_id) {
         $query = TodoNotification::all()->where('todo_item_id', $todo_item_id)->where('sent', false);
         $result = [];
-        foreach ($query as $notification){
+        foreach ($query as $notification) {
             $result[] = $notification->formattedResponse();
         }
         return $result;
