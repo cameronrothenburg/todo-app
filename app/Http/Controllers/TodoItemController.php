@@ -6,8 +6,7 @@ use App\Models\TodoAttachment;
 use App\Models\TodoItem;
 use App\Models\TodoNotification;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
+
 
 class TodoItemController extends Controller {
 
@@ -184,12 +183,18 @@ class TodoItemController extends Controller {
      *
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
     public function store(Request $request): \Illuminate\Http\JsonResponse {
 
         $request->validate($this->validationRules);
 
-        $todoItem = new TodoItem($request->all());
+        $todoItem = new TodoItem([
+            "title" => strip_tags($request->title),
+            "body" => strip_tags($request->body),
+            "due_datetime" => $request->due_datetime,
+            "completed" => $request->completed ?? 0,
+        ]);
         $saved = auth()->user()->todoItems()->save($todoItem);
 
         if ($request->has('attachments')) {
@@ -200,6 +205,7 @@ class TodoItemController extends Controller {
         if ($request->has('notifications')) {
             $this->createNotifications($request->notifications, $todoItem->id);
         }
+
         if ($saved) {
             return response()->json([
                 'success' => true,
@@ -414,10 +420,6 @@ class TodoItemController extends Controller {
      *      @OA\Response(
      *          response=500,
      *          description="Server Error",
-     *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean",readOnly=true,example=false),
-     *              @OA\Property(property="message", type="string",readOnly=true,example="Item could not be updated!"),
-     *              ),
      *      ),
      * )
      */
@@ -447,15 +449,18 @@ class TodoItemController extends Controller {
         }
 
         $updatedItem = $todoItem->fill([
-            "title" => $request->title ?? $todoItem->title,
-            "body" => $request->body ?? $todoItem->body,
+            "title" => strip_tags($request->title) ?? $todoItem->title,
+            "body" => strip_tags($request->body) ?? $todoItem->body,
             "due_datetime" => $request->due_datetime ?? $todoItem->due_datetime,
-            "completed" => $request->completed ?? $todoItem->completed,
+            "completed" => $request->completed ?? $todoItem->due_datetime,
         ])->save();
 
         if ($request->has('attachments')) {
             $updatedAttachments = $this->createAttachments($request->attachments, $todoItem->id);
             $updatedItem = $updatedItem && $updatedAttachments;
+        }
+        if ($request->has('notifications')) {
+           $this->createNotifications($request->notifications, $todoItem->id);
         }
 
         if (!$updatedItem) {
@@ -463,10 +468,6 @@ class TodoItemController extends Controller {
                 'success' => false,
                 'message' => 'Item could not be updated!'
             ], 500);
-        }
-
-        if ($request->has('notifications')) {
-            $this->createNotifications($request->notifications, $todoItem->id);
         }
 
         if ($request->deleteAttachments) {
@@ -484,7 +485,6 @@ class TodoItemController extends Controller {
         }
 
         return response()->json([
-            'success' => true,
             'data' => [
                 "content" => [$todoItem],
                 "attachments" => $this->getAttachments($todoItem->id),
@@ -581,8 +581,9 @@ class TodoItemController extends Controller {
      * Return all relevant fields from attachments related to a TodoItem
      * @param $id
      * @return TodoAttachment[]
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
-    private function getAttachments($id) {
+    private function getAttachments($id): array {
         $query = TodoAttachment::all()->where('todo_item_id', $id);
         $result = [];
         foreach ($query as $attachment) {
@@ -595,7 +596,7 @@ class TodoItemController extends Controller {
      * Helper function to create TodoAttachments
      * @param $todoAttachments
      * @param $todo_item_id
-     * @return bool
+     * @return array|bool
      */
     private function createAttachments($todoAttachments, $todo_item_id): bool {
         foreach ($todoAttachments as $attachment) {
@@ -677,5 +678,4 @@ class TodoItemController extends Controller {
             $notification->validateSelf($todoItem);
         });
     }
-
 }
