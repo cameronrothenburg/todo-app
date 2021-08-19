@@ -15,8 +15,8 @@ class TodoItemController extends Controller {
      * @var string[] Validation rules for model attributes.
      */
     private $validation = [
-        'title' => 'string|nullable|max:100',
-        'body' => 'string|nullable',
+        'title' => 'string',
+        'body' => 'string',
         'completed' => 'boolean|nullable',
         'due_datetime' => 'date|nullable',
         'attachments' => 'array|nullable',
@@ -48,6 +48,8 @@ class TodoItemController extends Controller {
      *              @OA\Property(property="success", type="boolean",readOnly=true,example=true),
      *              @OA\Property( property="data", type="object",
      *                  @OA\Property(property="content", type="array",
+     *                      @OA\Items(type="object", ref="#/components/schemas/TodoItem"),
+     *                      @OA\Items(type="object", ref="#/components/schemas/TodoItem"),
      *                      @OA\Items(type="object", ref="#/components/schemas/TodoItem"),
      *                  ),
      *              ),
@@ -106,14 +108,14 @@ class TodoItemController extends Controller {
      *          description="Title",
      *          in="query",
      *          name="title",
-     *          required=false,
+     *          required=true,
      *          @OA\Schema(type="string")
      *      ),
      *     @OA\Parameter(
      *          description="Body",
      *          in="query",
      *          name="body",
-     *          required=false,
+     *          required=true,
      *          @OA\Schema(type="string")
      *      ),
      *      @OA\Parameter(
@@ -153,8 +155,8 @@ class TodoItemController extends Controller {
      *                  @OA\Property(property="attachments", type="array",
      *                      @OA\Items(type="object", ref="#/components/schemas/TodoAttachment")
      *                  ),
-     *                  @OA\Property(property="notifications", type="object",
-     *                      @OA\Property(type="object", ref="#/components/schemas/TodoNotification")
+     *                  @OA\Property(property="notifications", type="array",
+     *                      @OA\Items(type="object", ref="#/components/schemas/TodoNotification")
      *                  ),
      *              ),
      *          ),
@@ -202,7 +204,7 @@ class TodoItemController extends Controller {
             return response()->json([
                 'success' => true,
                 'data' => [
-                    "content" => $todoItem,
+                    "content" => [$todoItem],
                     "attachments" => $this->getAttachments($todoItem->id),
                     "notifications" => $this->getNotifications($todoItem->id)
 
@@ -246,8 +248,8 @@ class TodoItemController extends Controller {
      *                  @OA\Property(property="attachments", type="array",
      *                      @OA\Items(type="object", ref="#/components/schemas/TodoAttachment")
      *                  ),
-     *                  @OA\Property(property="notifications", type="object",
-     *                      @OA\Property(type="object", ref="#/components/schemas/TodoNotification")
+     *                  @OA\Property(property="notifications", type="array",
+     *                      @OA\Items(type="object", ref="#/components/schemas/TodoNotification")
      *                  ),
      *              ),
      *          ),
@@ -314,7 +316,7 @@ class TodoItemController extends Controller {
      *          description="ID of TodoItem",
      *          in="path",
      *          name="id",
-     *          required=true,
+     *          required=false,
      *          example="7fed716f-4653-4e11-873d-f341aa8d911d",
      *          @OA\Schema(type="string")
      *      ),
@@ -329,7 +331,7 @@ class TodoItemController extends Controller {
      *          description="Body",
      *          in="query",
      *          name="body",
-     *          required=false,
+     *          required=true,
      *          @OA\Schema(type="string")
      *      ),
      *      @OA\Parameter(
@@ -383,8 +385,8 @@ class TodoItemController extends Controller {
      *                  @OA\Property(property="attachments", type="array",
      *                      @OA\Items(type="object", ref="#/components/schemas/TodoAttachment")
      *                  ),
-     *                  @OA\Property(property="notifications", type="object",
-     *                      @OA\Property(type="object", ref="#/components/schemas/TodoNotification")
+     *                  @OA\Property(property="notifications", type="array",
+     *                      @OA\Items(type="object", ref="#/components/schemas/TodoNotification")
      *                  ),
      *              ),
      *          ),
@@ -474,14 +476,13 @@ class TodoItemController extends Controller {
 
         if ($notifications) {
             $this->validateNotifications($todoItem);
-            $notifications = $this->getNotifications($todoItem->id);
         }
-        $attachments = $this->getAttachments($todoItem->id);
+
         return response()->json([
             'success' => true,
             'data' => [
-                "content" => $todoItem,
-                "attachments" => $attachments,
+                "content" => [$todoItem],
+                "attachments" => $this->getAttachments($todoItem->id),
                 "notifications" => $this->getNotifications($todoItem->id)
             ],
         ]);
@@ -606,7 +607,7 @@ class TodoItemController extends Controller {
     }
 
     /**
-     * Helper funtion to get TodoNotifications
+     * Helper function to get TodoNotifications
      * @param $todo_item_id
      * @return TodoNotification[]
      */

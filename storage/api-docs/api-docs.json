@@ -132,7 +132,7 @@
                         "name": "title",
                         "in": "query",
                         "description": "Title",
-                        "required": false,
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -141,7 +141,7 @@
                         "name": "body",
                         "in": "query",
                         "description": "Body",
-                        "required": false,
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -209,12 +209,10 @@
                                                     }
                                                 },
                                                 "notifications": {
-                                                    "properties": {
-                                                        "": {
-                                                            "$ref": "#/components/schemas/TodoNotification"
-                                                        }
-                                                    },
-                                                    "type": "object"
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/TodoNotification"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -292,12 +290,10 @@
                                                     }
                                                 },
                                                 "notifications": {
-                                                    "properties": {
-                                                        "": {
-                                                            "$ref": "#/components/schemas/TodoNotification"
-                                                        }
-                                                    },
-                                                    "type": "object"
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/TodoNotification"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -465,7 +461,7 @@
                         "name": "title",
                         "in": "query",
                         "description": "Title",
-                        "required": false,
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -474,7 +470,7 @@
                         "name": "body",
                         "in": "query",
                         "description": "Body",
-                        "required": false,
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -568,12 +564,10 @@
                                                     }
                                                 },
                                                 "notifications": {
-                                                    "properties": {
-                                                        "": {
-                                                            "$ref": "#/components/schemas/TodoNotification"
-                                                        }
-                                                    },
-                                                    "type": "object"
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/TodoNotification"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -710,7 +704,7 @@
                         "readOnly": true,
                         "example": "42189b19-5155-48a8-a81a-9433c9412b5d"
                     },
-                    "datetime": {
+                    "reminder_datetime": {
                         "type": "string",
                         "readOnly": true,
                         "example": "2021-09-15 09:47:59"
