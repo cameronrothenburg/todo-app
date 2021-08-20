@@ -2,13 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\InvalidMIMETypeException;
+use App\Exceptions\ModelNotFoundException;
 use App\Models\TodoAttachment;
 use App\Models\TodoItem;
 use App\Models\TodoNotification;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
-
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Cache;
 
 class TodoItemController extends Controller {
+
+    /**
+     * @var int Seconds that cache will expire after
+     */
+    private $ttl = 200;
 
     /**
      * @var string[] Validation rules for model attributes.
@@ -38,21 +47,32 @@ class TodoItemController extends Controller {
      *          in="query",
      *          name="completed",
      *          required=false,
-     *          @OA\Schema(type="boolean")
+     *          @OA\Schema(type="int")
+     *      ),
+     *     @OA\Parameter(
+     *          description="Page",
+     *          in="query",
+     *          name="page",
+     *          required=false,
+     *          @OA\Schema(type="int")
      *      ),
      *     @OA\Response(
      *       response=200,
      *       description="Success",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean",readOnly=true,example=true),
-     *              @OA\Property( property="data", type="object",
-     *                  @OA\Property(property="content", type="array",
+     *                  @OA\Property(property="current_page", type="int", example=1),
+     *                  @OA\Property(property="data", type="array",
      *                      @OA\Items(type="object", ref="#/components/schemas/TodoItem"),
      *                      @OA\Items(type="object", ref="#/components/schemas/TodoItem"),
      *                      @OA\Items(type="object", ref="#/components/schemas/TodoItem"),
      *                  ),
+     *                   @OA\Property(property="first_page_url", type="string", example="http://localhost/api/v1/todoitems?page=1"),
+     *                   @OA\Property(property="from", type="int", example=1),
+     *                  @OA\Property(property="next_page_url", type="string",example="http://localhost/api/v1/todoitems?page=2"),
+     *                   @OA\Property(property="per_paage", type="int", example=100),
+     *                  @OA\Property(property="prev_page", type="string", example=null),
+     *                   @OA\Property(property="to", type="integer", example=100),
      *              ),
-     *          ),
      *      ),
      *      @OA\Response(
      *          response=401,
@@ -79,19 +99,14 @@ class TodoItemController extends Controller {
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request): \Illuminate\Http\JsonResponse {
-        $todoItems = auth()->user()->todoItems()->orderByDesc('due_datetime')->get();
+        $query = [];
 
         if ($request->has('completed')) {
-
-            $todoItems = $todoItems->where('completed', $request->boolean('completed'));
+            $query[] = ["completed", $request->completed];
         }
+        $todoItems = $this->itemCache($request->page ?? 1, $query);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'content' => $todoItems
-            ]
-        ]);
+        return response()->json($todoItems);
     }
     /**
      * @OA\Post(
@@ -114,7 +129,7 @@ class TodoItemController extends Controller {
      *          description="Body",
      *          in="query",
      *          name="body",
-     *          required=false,
+     *          required=true,
      *          @OA\Schema(type="string")
      *      ),
      *      @OA\Parameter(
@@ -124,6 +139,14 @@ class TodoItemController extends Controller {
      *          required=false,
      *          example="2021-11-26 09:47:59",
      *          @OA\Schema(type="string")
+     *      ),
+     *      @OA\Parameter(
+     *          description="Completed",
+     *          in="query",
+     *          name="completed",
+     *          required=false,
+     *          example=0,
+     *          @OA\Schema(type="int")
      *      ),
      *     @OA\Parameter(
      *          description="Base64 encoded attachments",
@@ -146,7 +169,6 @@ class TodoItemController extends Controller {
      *       response=200,
      *       description="Success",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean",readOnly=true,example=true),
      *              @OA\Property( property="data", type="object",
      *                  @OA\Property(property="content", type="array",
      *                      @OA\Items(type="object", ref="#/components/schemas/TodoItem"),
@@ -170,12 +192,19 @@ class TodoItemController extends Controller {
      *      ),
      *      @OA\Response(
      *          response=404,
-     *          description="not found"
+     *          description="Not Found"
      *      ),
      *      @OA\Response(
      *          response=403,
      *          description="Forbidden"
-     *      )
+     *      ),
+     *       @OA\Response(
+     *       response=500,
+     *       description="Server Error",
+     *          @OA\JsonContent(
+     *              @OA\Property( property="errors", type="string", example="TodoItem could not be saved"),
+     *          ),
+     *      ),
      * )
      */
     /**
@@ -195,31 +224,34 @@ class TodoItemController extends Controller {
             "due_datetime" => $request->due_datetime,
             "completed" => $request->completed ?? 0,
         ]);
+
         $saved = auth()->user()->todoItems()->save($todoItem);
 
         if ($request->has('attachments')) {
-            $savedAttachments = $this->createAttachments($request->attachments, $todoItem->id);
-            $saved = $saved && $savedAttachments;
+            try {
+                $todoItem->createAttachments($request->attachments);
+            } catch (InvalidMIMETypeException $e) {
+                return $e->render($request);
+            }
         }
 
         if ($request->has('notifications')) {
-            $this->createNotifications($request->notifications, $todoItem->id);
+            $todoItem->createNotifications($request->notifications);
         }
 
         if ($saved) {
             return response()->json([
-                'success' => true,
                 'data' => [
                     "content" => [$todoItem],
-                    "attachments" => $this->getAttachments($todoItem->id),
-                    "notifications" => $this->getNotifications($todoItem->id)
+                    "attachments" => $todoItem->getFormattedAttachments(),
+                    "notifications" => $todoItem->getFormattedNotifications()
 
                 ]
             ]);
         }
+
         return response()->json([
-            'success' => false,
-            'message' => 'Item could not be saved'
+            'error' => 'TodoItem could not be saved'
         ], 500);
 
     }
@@ -246,7 +278,6 @@ class TodoItemController extends Controller {
      *       response=200,
      *       description="Success",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean",readOnly=true,example=true),
      *              @OA\Property( property="data", type="object",
      *                  @OA\Property(property="content", type="array",
      *                      @OA\Items(type="object", ref="#/components/schemas/TodoItem"),
@@ -272,7 +303,6 @@ class TodoItemController extends Controller {
      *          response=404,
      *          description="not found",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean",readOnly=true,example=false),
      *              @OA\Property(property="message", type="string",readOnly=true,example="Item could not be found!"),
      *              ),
      *      ),
@@ -288,22 +318,19 @@ class TodoItemController extends Controller {
      * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function show(string $id): \Illuminate\Http\JsonResponse {
-        $todoItem = auth()->user()->todoItems()->find($id);
+    public function show(Request $request, string $id): \Illuminate\Http\JsonResponse {
+        $todoItem = TodoItem::where('id', $id)->first();
 
         if (!$todoItem) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Item is not available!'
-            ], 404);
+            $exception = new ModelNotFoundException();
+            return $exception->render($request);
         }
 
         return response()->json([
-            'success' => true,
             'data' => [
-                "content" => $todoItem,
-                "attachments" => $this->getAttachments($id),
-                "notifications" => $this->getNotifications($id),
+                "content" => [$todoItem],
+                "attachments" => $todoItem->getFormattedAttachments(),
+                "notifications" => $todoItem->getFormattedNotifications(),
             ],
         ]);
     }
@@ -322,7 +349,7 @@ class TodoItemController extends Controller {
      *          description="ID of TodoItem",
      *          in="path",
      *          name="id",
-     *          required=false,
+     *          required=true,
      *          example="7fed716f-4653-4e11-873d-f341aa8d911d",
      *          @OA\Schema(type="string")
      *      ),
@@ -347,6 +374,14 @@ class TodoItemController extends Controller {
      *          required=false,
      *          example="2021-11-26 09:47:59",
      *          @OA\Schema(type="string")
+     *      ),
+     *      @OA\Parameter(
+     *          description="Completed",
+     *          in="query",
+     *          name="completed",
+     *          required=false,
+     *          example=0,
+     *          @OA\Schema(type="int")
      *      ),
      *     @OA\Parameter(
      *          description="Base64 encoded attachments",
@@ -383,7 +418,6 @@ class TodoItemController extends Controller {
      *       response=200,
      *       description="Success",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean",readOnly=true,example=true),
      *              @OA\Property( property="data", type="object",
      *                  @OA\Property(property="content", type="array",
      *                      @OA\Items(type="object", ref="#/components/schemas/TodoItem"),
@@ -409,7 +443,6 @@ class TodoItemController extends Controller {
      *          response=404,
      *          description="not found",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean",readOnly=true,example=false),
      *              @OA\Property(property="message", type="string",readOnly=true,example="Item is not available!"),
      *              ),
      *      ),
@@ -439,34 +472,35 @@ class TodoItemController extends Controller {
         $validation[] = array_splice($this->validationRules, 2);
         $request->validate($validation);
 
-        $todoItem = auth()->user()->todoItems()->find($id);
+        $todoItem = TodoItem::where('id', $id)->first();
 
         if (!$todoItem) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Item could not be found!'
-            ], 404);
+            $error = new ModelNotFoundException();
+            $error->render($request);
+        }
+
+        if ($request->has('attachments')) {
+            try {
+                $todoItem->createAttachments($request->attachments);
+            } catch (InvalidMIMETypeException $e) {
+                return $e->render($request);
+            }
         }
 
         $updatedItem = $todoItem->fill([
             "title" => strip_tags($request->title) ?? $todoItem->title,
             "body" => strip_tags($request->body) ?? $todoItem->body,
             "due_datetime" => $request->due_datetime ?? $todoItem->due_datetime,
-            "completed" => $request->completed ?? $todoItem->due_datetime,
+            "completed" => $request->completed ?? $todoItem->completed,
         ])->save();
 
-        if ($request->has('attachments')) {
-            $updatedAttachments = $this->createAttachments($request->attachments, $todoItem->id);
-            $updatedItem = $updatedItem && $updatedAttachments;
-        }
         if ($request->has('notifications')) {
-           $this->createNotifications($request->notifications, $todoItem->id);
+            $todoItem->createNotifications($request->notifications);
         }
 
         if (!$updatedItem) {
             return response()->json([
-                'success' => false,
-                'message' => 'Item could not be updated!'
+                'errors' => 'Item could not be updated!'
             ], 500);
         }
 
@@ -478,17 +512,17 @@ class TodoItemController extends Controller {
             $this->deleteNotifications($request->deleteNotifications);
         }
 
-        $notifications = $this->getNotifications($todoItem->id);
+        $notifications = $todoItem->getFormattedNotifications();
 
         if ($notifications) {
-            $this->validateNotifications($todoItem);
+            $todoItem->removeInvalidNotifications();
         }
 
         return response()->json([
             'data' => [
                 "content" => [$todoItem],
-                "attachments" => $this->getAttachments($todoItem->id),
-                "notifications" => $this->getNotifications($todoItem->id)
+                "attachments" => $todoItem->getFormattedAttachments(),
+                "notifications" => $todoItem->getFormattedNotifications()
             ],
         ]);
     }
@@ -551,99 +585,33 @@ class TodoItemController extends Controller {
     /**
      * Remove the specified resource from storage.
      *
+     * @param Request $request
      * @param String $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(string $id): \Illuminate\Http\JsonResponse {
-        $todoItem = auth()->user()->todoItems()->find($id);
+    public function destroy(Request $request, string $id): \Illuminate\Http\JsonResponse {
+        $todoItem = TodoItem::where('id', $id)->first();
 
         if (!$todoItem) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Item could not be found!'
-            ], 404);
+            $error = new ModelNotFoundException();
+            $error->render($request);
         }
 
         if ($todoItem->delete()) {
             $response = response()->json([
-                'success' => true,
+                'message' => 'Item deleted',
             ]);
         } else {
             $response = response()->json([
-                'success' => false,
-                'message' => 'Item could not be deleted!'
+                'errors' => 'Item could not be deleted!'
             ], 500);
         }
         return $response;
     }
 
     /**
-     * Return all relevant fields from attachments related to a TodoItem
-     * @param $id
-     * @return TodoAttachment[]
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
-     */
-    private function getAttachments($id): array {
-        $query = TodoAttachment::all()->where('todo_item_id', $id);
-        $result = [];
-        foreach ($query as $attachment) {
-            $result[] = $attachment->formattedResponse();
-        }
-        return $result;
-    }
-
-    /**
-     * Helper function to create TodoAttachments
-     * @param $todoAttachments
-     * @param $todo_item_id
-     * @return array|bool
-     */
-    private function createAttachments($todoAttachments, $todo_item_id): bool {
-        foreach ($todoAttachments as $attachment) {
-
-            $todoAttachment = TodoAttachment::create([
-                'todo_item_id' => $todo_item_id,
-            ]);
-            if (!$todoAttachment->store($attachment)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Helper function to get TodoNotifications
-     * @param $todo_item_id
-     * @return TodoNotification[]
-     */
-    private function getNotifications($todo_item_id) {
-        $query = TodoNotification::all()->where('todo_item_id', $todo_item_id)->where('sent', false);
-        $result = [];
-        foreach ($query as $notification) {
-            $result[] = $notification->formattedResponse();
-        }
-        return $result;
-    }
-
-    /**
-     * Helper function to create TodoNotifications
-     * @param $todoNotifications
-     * @param $todo_item_id
-     * @return void
-     */
-    private function createNotifications($todoNotifications, $todo_item_id): void {
-        foreach ($todoNotifications as $notification) {
-            TodoNotification::create([
-                'todo_item_id' => $todo_item_id,
-                'reminder_datetime' => $notification
-            ]);
-        }
-    }
-
-    /**
-     * Helper function to delete TodoNotifications
-     * @param array $todoNotificationIds
+     * Helper function to call TodoNotifications::delete on multiple TodoNotifications
+     * @param string[] $todoNotificationIds
      * @return void
      */
     private function deleteNotifications(array $todoNotificationIds): void {
@@ -656,8 +624,9 @@ class TodoItemController extends Controller {
     }
 
     /**
-     * Helper function to remove TodoAttachments
-     * @param array $todoAttachmentIds
+     * Helper function to call TodoAttachments::remove on multiple TodoAttachments
+     * @param string[] $todoAttachmentIds
+     * @return void
      */
     private function deleteAttachments(array $todoAttachmentIds): void {
         foreach ($todoAttachmentIds as $deleteId) {
@@ -669,13 +638,26 @@ class TodoItemController extends Controller {
     }
 
     /**
-     * Helper function to validate notifications
-     * @param TodoItem $todoItem
+     * Helper function to interact with TodoItem cache
+     * @param int $page
+     * @param array[] $query
+     * @return Paginator
      */
-    private function validateNotifications(TodoItem $todoItem) {
-        $notifications = TodoNotification::all()->where('todo_item_id', $todoItem->id);
-        $notifications->map(function ($notification) use ($todoItem) {
-            $notification->validateSelf($todoItem);
+    private function itemCache(int $page, $query): Paginator {
+        $userId = \Auth::user()->id;
+        $storeName = "todoItems-{$userId}-{$page}}";
+        if (!empty($query)) {
+            foreach ($query as $item) {
+                $storeName .= "?{$item[0]}={$item[1]}";
+            }
+        }
+
+        return Cache::tags("todoItems-{$userId}")->remember($storeName, $this->ttl, function () use ($query) {
+            return \Auth::user()
+                ->todoItems()
+                ->where($query)
+                ->orderByDesc('due_datetime')
+                ->simplePaginate(100);
         });
     }
 }

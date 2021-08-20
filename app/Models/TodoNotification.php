@@ -40,7 +40,7 @@ class TodoNotification extends Model
 
     /**
      * Function to check if notification is still valid after $todoitem->due_datetime is updated
-     * @param TodoItem $todoItem
+     * @param TodoItem $todoItem The todoitem to check against
      * @return void
      */
     public function validateSelf(TodoItem $todoItem): void {
@@ -53,7 +53,7 @@ class TodoNotification extends Model
 
     /**
      * Return a formatted response for api
-     * @return array
+     * @return string[] Returns the ID and datetime of the notification
      */
     public function formattedResponse(): array {
         return [

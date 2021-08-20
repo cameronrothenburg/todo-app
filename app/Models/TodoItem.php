@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 /**
  *  @OA\Schema(
@@ -66,5 +67,81 @@ class TodoItem extends Model
      */
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Return all TodoNotifications related to this TodoItem
+     * @return TodoNotification[]
+     */
+    public function getFormattedNotifications() {
+        $query = TodoNotification::all()->where('todo_item_id', $this->id)->where('sent', false);
+        $result = [];
+        foreach ($query as $notification) {
+            $result[] = $notification->formattedResponse();
+        }
+        return $result;
+    }
+
+    /**
+     * Return all attachments  related to this TodoItem
+     * @return TodoAttachment[]
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
+     */
+    public function getFormattedAttachments(): array {
+        $query = TodoAttachment::all()->where('todo_item_id', $this->id);
+        $result = [];
+        foreach ($query as $attachment) {
+            $result[] = $attachment->formattedResponse();
+        }
+        return $result;
+    }
+
+    /**
+     * Helper function to remove notifications set after due_datetime
+     * @return void
+     */
+    public function removeInvalidNotifications(): void {
+        $notifications = TodoNotification::all()->where('todo_item_id', $this->id);
+        $notifications->map(function ($notification) {
+            $notification->validateSelf($this);
+        });
+    }
+
+    /**
+     * Helper function to create TodoAttachments
+     * @param string[] base64Strings array of base64 strings
+     * @return void
+     */
+    public function createAttachments(array $attachments): void {
+        foreach ($attachments as $attachment) {
+            $todoAttachment = TodoAttachment::create([
+                'todo_item_id' => $this->id,
+            ]);
+            $todoAttachment->store($attachment);
+        }
+    }
+
+    /**
+     * Helper function to create TodoNotifications
+     * @param string[] Array of dateTimes
+     * @return void
+     */
+    public function createNotifications($dateTimes): void {
+        foreach ($dateTimes as $dateTime) {
+            TodoNotification::create([
+                'todo_item_id' => $this->id,
+                'reminder_datetime' => $dateTime
+            ]);
+        }
+    }
+    public function save(array $options = [])
+    {
+        $result = parent::save($options);
+
+        if ($result) {
+           Cache::tags("todoItems-{$this->user_id}")->flush();
+        }
+
+        return $result;
     }
 }

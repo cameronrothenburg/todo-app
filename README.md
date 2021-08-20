@@ -31,7 +31,11 @@ Uploaded files are stored in UUID folders and can be configured to only allow sp
 Files can be saved and retrieved from any storage location, multiple storage locations are supported at any one time.
 
 The API is secured with a Bearer token to only allow registered users to interact with the application.
+Laravel passport is used for this.
 
+Searched results are stored in Cache to allow for faster retrieval for each subsequent request.
+Cache is reset when an todoItem is saved/updated. This is to ensure cache is updated.
+I have used Redis for the cache driver
 
 ## Built With
 
@@ -40,6 +44,7 @@ The API is secured with a Bearer token to only allow registered users to interac
 * [Laravel 8 ](https://laravel.com/)
 * [Laravel Passport](https://laravel.com/docs/8.x/passport)
 * [L5-Swagger](https://github.com/DarkaOnLine/L5-Swagger)
+* [Redis](https://redis.io)
 
 ## Getting Started
 
@@ -53,8 +58,10 @@ This project uses [Laravel Sail](https://laravel.com/docs/8.x/sail), follow the 
 
 These instructions assume you already have the repo cloned.
 
+- rename `.env.example` to `.env`
 - In the root of the project run `` alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail' ``
 - Run ``sail up`` to start the docker containers
+  - Append `-d` to run in the background
 - Run ``sail php artisan migrate && sail php artisan db:seed`` to migrate and seed the application
 - Run ` sail php artisan passport:install` to setup passport
 - Run ` sail php artisian storage:link` to setup storage
@@ -66,7 +73,7 @@ These instructions assume you already have the repo cloned.
     - Copy your returned token to the Authorize button using the following format `Bearer {token}`
       for example `Bearer eyJ0eXAiOiJKV1QiLCJ..`
 
-If you don't want to run this command by command run the first two commands, then run `` sail php artisan migrate && sail php artisan db:seed && sail php artisan passport:install && sail php artisian storage:link && sail php artisan l5-swagger:generate && sail php artisan schedule:work ``
+If you don't want to run this command by command run the first two commands, then run ``alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail' && sail up -d && sail php artisan migrate && sail php artisan db:seed && sail php artisan passport:install && sail php artisian storage:link && sail php artisan l5-swagger:generate && sail php artisan schedule:work ``
 This will run the commands one after another. Bear in mind the last command will stay open as its the scheduler.
 
 ## License

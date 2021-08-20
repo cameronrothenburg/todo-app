@@ -68,7 +68,16 @@
                         "description": "Completed",
                         "required": false,
                         "schema": {
-                            "type": "boolean"
+                            "type": "int"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page",
+                        "required": false,
+                        "schema": {
+                            "type": "int"
                         }
                     }
                 ],
@@ -79,21 +88,39 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "readOnly": true,
-                                            "example": true
+                                        "current_page": {
+                                            "type": "int",
+                                            "example": 1
                                         },
                                         "data": {
-                                            "properties": {
-                                                "content": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "$ref": "#/components/schemas/TodoItem"
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/TodoItem"
+                                            }
+                                        },
+                                        "first_page_url": {
+                                            "type": "string",
+                                            "example": "http://localhost/api/v1/todoitems?page=1"
+                                        },
+                                        "from": {
+                                            "type": "int",
+                                            "example": 1
+                                        },
+                                        "next_page_url": {
+                                            "type": "string",
+                                            "example": "http://localhost/api/v1/todoitems?page=2"
+                                        },
+                                        "per_paage": {
+                                            "type": "int",
+                                            "example": 100
+                                        },
+                                        "prev_page": {
+                                            "type": "string",
+                                            "example": null
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 100
                                         }
                                     },
                                     "type": "object"
@@ -157,6 +184,16 @@
                         "example": "2021-11-26 09:47:59"
                     },
                     {
+                        "name": "completed",
+                        "in": "query",
+                        "description": "Completed",
+                        "required": false,
+                        "schema": {
+                            "type": "int"
+                        },
+                        "example": 0
+                    },
+                    {
                         "name": "attachments[]",
                         "in": "query",
                         "description": "Base64 encoded attachments",
@@ -189,11 +226,6 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "readOnly": true,
-                                            "example": true
-                                        },
                                         "data": {
                                             "properties": {
                                                 "content": {
@@ -230,10 +262,26 @@
                         "description": "Bad Request"
                     },
                     "404": {
-                        "description": "not found"
+                        "description": "Not Found"
                     },
                     "403": {
                         "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "type": "string",
+                                            "example": "TodoItem could not be saved"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -270,11 +318,6 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "readOnly": true,
-                                            "example": true
-                                        },
                                         "data": {
                                             "properties": {
                                                 "content": {
@@ -316,11 +359,6 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "readOnly": true,
-                                            "example": false
-                                        },
                                         "message": {
                                             "type": "string",
                                             "readOnly": true,
@@ -451,7 +489,7 @@
                         "name": "id",
                         "in": "path",
                         "description": "ID of TodoItem",
-                        "required": false,
+                        "required": true,
                         "schema": {
                             "type": "string"
                         },
@@ -470,7 +508,7 @@
                         "name": "body",
                         "in": "query",
                         "description": "Body",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -484,6 +522,16 @@
                             "type": "string"
                         },
                         "example": "2021-11-26 09:47:59"
+                    },
+                    {
+                        "name": "completed",
+                        "in": "query",
+                        "description": "Completed",
+                        "required": false,
+                        "schema": {
+                            "type": "int"
+                        },
+                        "example": 0
                     },
                     {
                         "name": "attachments[]",
@@ -544,11 +592,6 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "readOnly": true,
-                                            "example": true
-                                        },
                                         "data": {
                                             "properties": {
                                                 "content": {
@@ -590,11 +633,6 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "readOnly": true,
-                                            "example": false
-                                        },
                                         "message": {
                                             "type": "string",
                                             "readOnly": true,
@@ -610,26 +648,7 @@
                         "description": "Forbidden"
                     },
                     "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "readOnly": true,
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "readOnly": true,
-                                            "example": "Item could not be updated!"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "Server Error"
                     }
                 },
                 "security": [
@@ -652,7 +671,7 @@
                     "url": {
                         "type": "string|null",
                         "readOnly": true,
-                        "example": ""
+                        "example": "/storage/cd63320c-918e-4eee-acbb-de530ccc691c/ab15b527-9161-4ba5-b3e7-752c78c7a532.png"
                     }
                 },
                 "type": "object",
