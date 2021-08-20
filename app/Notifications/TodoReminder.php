@@ -53,8 +53,8 @@ class TodoReminder extends Notification implements ShouldQueue
      */
     public function toMail($notifiable): MailMessage {
 
-        $dateDiff = Carbon::parse($this->todoNotification->reminder_datetime)->longRelativeDiffForHumans
-        ($this->todoItem->due_datetime, CarbonInterface::DIFF_ABSOLUTE);
+        $dateDiff = Carbon::parse($this->todoItem->due_datetime)->longRelativeDiffForHumans
+        ($this->todoNotification->reminder_datetime, CarbonInterface::DIFF_ABSOLUTE);
 
         return (new MailMessage)
                     ->subject('Your Todo Reminder!')
