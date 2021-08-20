@@ -52,19 +52,26 @@ To get a local copy up and running follow these simple steps.
 
 ### Prerequisites
 
-This project uses [Laravel Sail](https://laravel.com/docs/8.x/sail), follow the instructions to set up Sail's prerequisites for your machine.
+* [Docker](https://www.docker.com/)
+* Linux Distribution Or WSL
 
 ### Installation
 
-These instructions assume you already have the repo cloned.
 
-- rename `.env.example` to `.env`
+- Rename `.env.example` to `.env`
+- Run `docker run --rm \
+  -u "$(id -u):$(id -g)" \
+  -v $(pwd):/opt \
+  -w /opt \
+  laravelsail/php80-composer:latest \
+  composer install --ignore-platform-reqs`
 - In the root of the project run `` alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail' ``
 - Run ``sail up`` to start the docker containers
   - Append `-d` to run in the background
+- Run ``sail php artisan key:generate`` to generate the random application key
 - Run ``sail php artisan migrate && sail php artisan db:seed`` to migrate and seed the application
 - Run ` sail php artisan passport:install` to setup passport
-- Run ` sail php artisian storage:link` to setup storage
+- Run ` sail php artisan storage:link` to setup storage
 - Run `sail php artisan l5-swagger:generate` to generate the api docs
 - Run `sail php artisan schedule:work` to start the scheduler and to send emails
     - Visit `http://localhost:8025/` to view the emails sent
@@ -73,7 +80,7 @@ These instructions assume you already have the repo cloned.
     - Copy your returned token to the Authorize button using the following format `Bearer {token}`
       for example `Bearer eyJ0eXAiOiJKV1QiLCJ..`
 
-If you don't want to run this command by command run the first two commands, then run ``alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail' && sail up -d && sail php artisan migrate && sail php artisan db:seed && sail php artisan passport:install && sail php artisian storage:link && sail php artisan l5-swagger:generate && sail php artisan schedule:work ``
+If you don't want to run this command by command do the first two steps, then run ``alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail' && sail up -d && sail php artisan key:generate && sail php artisan migrate && sail php artisan db:seed && sail php artisan passport:install && sail php artisan storage:link && sail php artisan l5-swagger:generate && sail php artisan schedule:work ``
 This will run the commands one after another. Bear in mind the last command will stay open as its the scheduler.
 
 ## License
