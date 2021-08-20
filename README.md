@@ -29,13 +29,20 @@ Models have UUIDs as the primary key to prevent attacks with enumeration.
 
 Uploaded files are stored in UUID folders and can be configured to only allow specific MIME Types. Once again this makes enumerating through public files a lot harder.
 Files can be saved and retrieved from any storage location, multiple storage locations are supported at any one time.
+Max upload size is left for php.ini to decide.
 
 The API is secured with a Bearer token to only allow registered users to interact with the application.
-Laravel passport is used for this.
+Laravel passport to generate the token and validate it.
 
 Searched results are stored in Cache to allow for faster retrieval for each subsequent request.
 Cache is reset when an todoItem is saved/updated. This is to ensure cache is updated.
-I have used Redis for the cache driver
+I have used Redis for the cache driver.
+
+
+Notifications can be added to todo items, the user will receive an email when the notification is due.
+Updating the todo items due date to before a notification due date will automatically delete the notification.
+Emails are trigger through an artisan command that runs every minute.
+
 
 ## Built With
 
