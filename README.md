@@ -83,7 +83,7 @@ If for any reason installation fails with errors about not being able to connect
 - `sail down -v`
 - `docker system prune` to remove containers 
 - `sail build --no-cache` to build with new images
-- Redo setup instructions from step 3
+- Redo setup instructions from step 3 step by step! Don't use the chained command!
 
 ## License
 

@@ -59,7 +59,7 @@ class TodoReminder extends Notification implements ShouldQueue
         return (new MailMessage)
                     ->subject('Your Todo Reminder!')
                     ->greeting('Hello!')
-                    ->line("Your todo titled '{$this->todoItem->title}' is due in {$dateDiff}")
+                    ->line("Your todo titled '{$this->todoItem->title}' is due in {$dateDiff}!")
                     ->line('Thank you!');
     }
 
