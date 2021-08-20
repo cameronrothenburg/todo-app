@@ -59,12 +59,7 @@ To get a local copy up and running follow these simple steps.
 
 
 - Rename `.env.example` to `.env`
-- Run `docker run --rm \
-  -u "$(id -u):$(id -g)" \
-  -v $(pwd):/opt \
-  -w /opt \
-  laravelsail/php80-composer:latest \
-  composer install --ignore-platform-reqs`
+- Run the setup commands [here](https://laravel.com/docs/8.x/sail#installing-composer-dependencies-for-existing-projects) for laravel sail  
 - In the root of the project run `` alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail' ``
 - Run ``sail up`` to start the docker containers
   - Append `-d` to run in the background
@@ -82,6 +77,13 @@ To get a local copy up and running follow these simple steps.
 
 If you don't want to run this command by command do the first two steps, then run ``alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail' && sail up -d && sail php artisan key:generate && sail php artisan migrate && sail php artisan db:seed && sail php artisan passport:install && sail php artisan storage:link && sail php artisan l5-swagger:generate && sail php artisan schedule:work ``
 This will run the commands one after another. Bear in mind the last command will stay open as its the scheduler.
+
+## Notes
+If for any reason installation fails with errors about not being able to connect to mysql run this
+- `sail down -v`
+- `docker system prune` to remove containers 
+- `sail build --no-cache` to build with new images
+- Redo setup instructions from step 3
 
 ## License
 
