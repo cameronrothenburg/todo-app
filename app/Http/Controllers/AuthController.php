@@ -68,9 +68,9 @@ class AuthController extends Controller
         if (auth()->attempt($data)) {
             $token = auth()->user()->createToken('todo-app')->accessToken;
             return response()->json(['token' => $token], 200);
-        } else {
-            return response()->json(['error' => 'Unauthorised'], 401);
         }
+
+        return response()->json(['error' => 'Unauthorised'], 401);
     }
 
 }

@@ -315,11 +315,11 @@ class TodoItemController extends Controller {
     /**
      * Display the specified resource.
      *
-     * @param string $id
+     * @param string $todoItemId
      * @return \Illuminate\Http\JsonResponse
      */
-    public function show(Request $request, string $id): \Illuminate\Http\JsonResponse {
-        $todoItem = TodoItem::where('id', $id)->first();
+    public function show(Request $request, string $todoItemId): \Illuminate\Http\JsonResponse {
+        $todoItem = TodoItem::where('id', $todoItemId)->first();
 
         if (!$todoItem) {
             $exception = new ModelNotFoundException();
@@ -460,10 +460,10 @@ class TodoItemController extends Controller {
      * Update the specified resource in storage.
      *
      * @param \Illuminate\Http\Request $request
-     * @param String $id
+     * @param String $todoItemId
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, string $id): \Illuminate\Http\JsonResponse {
+    public function update(Request $request, string $todoItemId): \Illuminate\Http\JsonResponse {
         $validation = [
             "title" => 'string|nullable',
             "body" => 'string|nullable'
@@ -472,7 +472,7 @@ class TodoItemController extends Controller {
         $validation[] = array_splice($this->validationRules, 2);
         $request->validate($validation);
 
-        $todoItem = TodoItem::where('id', $id)->first();
+        $todoItem = TodoItem::where('id', $todoItemId)->first();
 
         if (!$todoItem) {
             $error = new ModelNotFoundException();
@@ -586,11 +586,11 @@ class TodoItemController extends Controller {
      * Remove the specified resource from storage.
      *
      * @param Request $request
-     * @param String $id
+     * @param String $todoItemId
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(Request $request, string $id): \Illuminate\Http\JsonResponse {
-        $todoItem = TodoItem::where('id', $id)->first();
+    public function destroy(Request $request, string $todoItemId): \Illuminate\Http\JsonResponse {
+        $todoItem = TodoItem::where('id', $todoItemId)->first();
 
         if (!$todoItem) {
             $error = new ModelNotFoundException();
@@ -598,66 +598,68 @@ class TodoItemController extends Controller {
         }
 
         if ($todoItem->delete()) {
-            $response = response()->json([
+            return response()->json([
                 'message' => 'Item deleted',
             ]);
-        } else {
-            $response = response()->json([
-                'errors' => 'Item could not be deleted!'
-            ], 500);
         }
-        return $response;
+
+        return response()->json([
+            'errors' => 'Item could not be deleted!'
+        ], 500);
     }
 
-    /**
-     * Helper function to call TodoNotifications::delete on multiple TodoNotifications
-     * @param string[] $todoNotificationIds
-     * @return void
-     */
-    private function deleteNotifications(array $todoNotificationIds): void {
-        foreach ($todoNotificationIds as $deleteId) {
-            $todoNotification = TodoNotification::all()->where('id', $deleteId)->first();
-            if (!is_null($todoNotification)) {
-                $todoNotification->delete();
-            }
-        }
-    }
-
-    /**
-     * Helper function to call TodoAttachments::remove on multiple TodoAttachments
-     * @param string[] $todoAttachmentIds
-     * @return void
-     */
-    private function deleteAttachments(array $todoAttachmentIds): void {
-        foreach ($todoAttachmentIds as $deleteId) {
-            $todoAttachment = TodoAttachment::all()->where('id', $deleteId)->first();
-            if (!is_null($todoAttachment)) {
-                $todoAttachment->remove();
-            }
-        }
-    }
-
-    /**
-     * Helper function to interact with TodoItem cache
-     * @param int $page
-     * @param array[] $query
-     * @return Paginator
-     */
-    private function itemCache(int $page, $query): Paginator {
-        $userId = \Auth::user()->id;
-        $storeName = "todoItems-{$userId}-{$page}}";
-        if (!empty($query)) {
-            foreach ($query as $item) {
-                $storeName .= "?{$item[0]}={$item[1]}";
+        /**
+         * Helper function to call TodoNotifications::delete on multiple TodoNotifications
+         * @param string[] $todoNotificationIds
+         * @return void
+         */
+        private
+        function deleteNotifications(array $todoNotificationIds): void {
+            foreach ($todoNotificationIds as $deleteId) {
+                $todoNotification = TodoNotification::all()->where('id', $deleteId)->first();
+                if (!is_null($todoNotification)) {
+                    $todoNotification->delete();
+                }
             }
         }
 
-        return Cache::tags("todoItems-{$userId}")->remember($storeName, $this->ttl, function () use ($query) {
-            return \Auth::user()
-                ->todoItems()
-                ->where($query)
-                ->orderByDesc('due_datetime')
-                ->simplePaginate(100);
-        });
+        /**
+         * Helper function to call TodoAttachments::remove on multiple TodoAttachments
+         * @param string[] $todoAttachmentIds
+         * @return void
+         */
+        private
+        function deleteAttachments(array $todoAttachmentIds): void {
+            foreach ($todoAttachmentIds as $deleteId) {
+                $todoAttachment = TodoAttachment::all()->where('id', $deleteId)->first();
+                if (!is_null($todoAttachment)) {
+                    $todoAttachment->remove();
+                }
+            }
+        }
+
+        /**
+         * Helper function to interact with TodoItem cache
+         * @param int $pageNumber
+         * @param array[] $query
+         * @return Paginator
+         */
+        private
+        function itemCache(int $pageNumber, $query): Paginator {
+            $userId = \Auth::user()->id;
+            $storeName = "todoItems-{$userId}-{$pageNumber}}";
+            if (!empty($query)) {
+                foreach ($query as $item) {
+                    $storeName .= "?{$item[0]}={$item[1]}";
+                }
+            }
+
+            return Cache::tags("todoItems-{$userId}")->remember($storeName, $this->ttl, function () use ($query) {
+                return \Auth::user()
+                    ->todoItems()
+                    ->where($query)
+                    ->orderByDesc('due_datetime')
+                    ->simplePaginate(100);
+            });
+        }
     }
-}
