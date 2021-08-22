@@ -91,7 +91,7 @@ If for any reason installation fails with errors about not being able to connect
 - `docker system prune` to remove containers 
 - `sail build --no-cache` to build with new images
 - Redo setup instructions from step 3 step by step! Don't use the chained command!
-
+    - Run ``sail php artisan migrate:fresh`` instead of ``sail php artisan migrate``
 ## License
 
 Distributed under the MIT License. See [LICENSE](https://github.com/rotho98/todo-app/blob/main/LICENSE.md) for more information.
